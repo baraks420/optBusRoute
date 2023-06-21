@@ -9,7 +9,8 @@ from create_map import StationsMap
 
 class Optimize:
     def __init__(self, stations_map: StationsMap, number_of_combinations: int = 50, max_dis: int = 100,
-                 max_iter: int = 1000, alpa: float = 0.10, n_shuffle: int = 5):
+                 max_iter: int = 1000, alpa: float = 0.10, n_shuffle: int = 5, number_of_same_values: int = 1000):
+        self.number_of_same_values = number_of_same_values
         self.stations_map = stations_map
         self.stations = np.array(range(1, len(self.stations_map.exp) + 1))
         if len(self.stations) != self.stations_map.distances.shape[0] - 1:
@@ -27,10 +28,21 @@ class Optimize:
 
     def maximizer(self):
         self.generation = [self.create_random_combinations()]
+        self.generation[-1].sort_values("expectation", ascending=False, inplace=True)
+        last_best_exp = self.generation[-1].head(1).iloc[0]["expectation"]
+        counter_best = 0
         for _ in range(self.max_iter):
             generation = self.generation[-1]
             generation.sort_values("expectation", ascending=False, inplace=True)
-            if generation.head(1).iloc[0]["expectation"] >= self.exp_threshold:
+            best_exp = generation.head(1).iloc[0]["expectation"]
+            if last_best_exp == best_exp:
+                counter_best += 1
+                if counter_best >= self.number_of_same_values:
+                    print(best_exp)
+            else:
+                counter_best = 0
+            last_best_exp = best_exp
+            if best_exp >= self.exp_threshold:
                 self.accuracy = 100 * generation.head(1).iloc[0]["expectation"] / self.total_exp
                 self.best_route = generation.head(1)
                 break
@@ -51,8 +63,8 @@ class Optimize:
             np.random.shuffle(stations_np)
             exp, dis = self.compute_distance_and_expectation(stations_np)
             if dis <= self.max_dis:
-                return exp, dis , tuple(stations_np)
-        return -1, dis ,stations
+                return exp, dis, tuple(stations_np)
+        return -1, dis, stations
 
     def create_new_generation(self, generation: pd.DataFrame):
         new_gen = generation.copy()
@@ -61,8 +73,10 @@ class Optimize:
             child1, child2 = self.single_point_crossover(cross_over.iloc[0], cross_over.iloc[1])
             child1 = self.mutation(child1)
             child2 = self.mutation(child2)
-            child1.at[0, 'expectation'], child1.at[0, 'distance'], child1.at[0, 'stations'] = self.cost(child1.at[0, 'stations'])
-            child2.at[0, 'expectation'], child2.at[0, 'distance'], child2.at[0, 'stations'] = self.cost(child2.at[0, 'stations'])
+            child1.at[0, 'expectation'], child1.at[0, 'distance'], child1.at[0, 'stations'] = self.cost(
+                child1.at[0, 'stations'])
+            child2.at[0, 'expectation'], child2.at[0, 'distance'], child2.at[0, 'stations'] = self.cost(
+                child2.at[0, 'stations'])
             new_gen = pd.concat([new_gen, child1, child2], ignore_index=True)
         return new_gen
 
@@ -108,7 +122,7 @@ class Optimize:
         for _ in range(self.number_of_combinations):
             genome = np.array(random.choices([True, False], weights=(10, 90), k=n_station))
             stations = tuple(self.stations[genome])
-            expectation, distance,stations = self.cost(stations)
+            expectation, distance, stations = self.cost(stations)
             new_raw = pd.DataFrame(
                 [{'stations': stations, 'genome': genome, 'expectation': expectation, 'distance': distance}])
             df = pd.concat([df, new_raw], ignore_index=True)
