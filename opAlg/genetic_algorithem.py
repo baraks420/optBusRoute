@@ -44,15 +44,15 @@ class Optimize:
         self.accuracy = 100 * generation.head(1).iloc[0]["expectation"] / self.total_exp
         self.best_route = generation.head(1)
 
-    def cost(self, stations: np.array) -> (int, float):
+    def cost(self, stations: tuple) -> (int, float):
         dis = 0
         stations_np = np.array(stations)
         for _ in range(self.n_shuffle):
             np.random.shuffle(stations_np)
             exp, dis = self.compute_distance_and_expectation(stations_np)
             if dis <= self.max_dis:
-                return exp, dis
-        return -1, dis
+                return exp, dis , tuple(stations_np)
+        return -1, dis ,stations
 
     def create_new_generation(self, generation: pd.DataFrame):
         new_gen = generation.copy()
@@ -61,8 +61,8 @@ class Optimize:
             child1, child2 = self.single_point_crossover(cross_over.iloc[0], cross_over.iloc[1])
             child1 = self.mutation(child1)
             child2 = self.mutation(child2)
-            child1.at[0, 'expectation'], child1.at[0, 'distance'] = self.cost(child1.at[0, 'stations'])
-            child2.at[0, 'expectation'], child2.at[0, 'distance'] = self.cost(child2.at[0, 'stations'])
+            child1.at[0, 'expectation'], child1.at[0, 'distance'], child1.at[0, 'stations'] = self.cost(child1.at[0, 'stations'])
+            child2.at[0, 'expectation'], child2.at[0, 'distance'], child2.at[0, 'stations'] = self.cost(child2.at[0, 'stations'])
             new_gen = pd.concat([new_gen, child1, child2], ignore_index=True)
         return new_gen
 
@@ -106,9 +106,9 @@ class Optimize:
         df = pd.DataFrame(columns=['stations', 'genome', 'expectation', 'distance'])
         n_station = len(self.stations)
         for _ in range(self.number_of_combinations):
-            genome = np.array(random.choices([True, False], weights=(10, 90), k=n_station))
+            genome = np.array(random.choices([True, False], weights=(90, 90), k=n_station))
             stations = tuple(self.stations[genome])
-            expectation, distance = self.cost(self.stations[genome])
+            expectation, distance,stations = self.cost(stations)
             new_raw = pd.DataFrame(
                 [{'stations': stations, 'genome': genome, 'expectation': expectation, 'distance': distance}])
             df = pd.concat([df, new_raw], ignore_index=True)
@@ -151,4 +151,4 @@ if __name__ == '__main__':
     )
     b.maximizer()
     print("time is:", datetime.now() - now)
-    print(b.generation)
+    # print(b.generation)
