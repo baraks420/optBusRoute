@@ -1,14 +1,30 @@
 import random
 from datetime import datetime
-
 import pandas as pd
 import numpy as np
-
 from create_map import StationsMap
 
 
 class Optimize:
-    def __init__(self, stations_map: StationsMap, number_of_combinations: int = 50, max_dis: int = 100,
+    """
+    Parameters (input): 
+        - sations_map : np.ndarray (n,n) matrix that represent the Graph, with distance between stations  
+        - number_of_combinations : (int) Number of routes generated at each iteration
+        - max_dis : (int) Max distance allowed in a route
+        - max_iter :(int) max iteration
+        - alpha : (float) Percentatage of route to keep for building the next generation
+        - n_shuffle : (int) constant for searching best combination among (n_shuffle) combination 
+                      with the same genome
+        - number_of_same_values : (int) stop codition. It stop after seeing (number_of_same_values) 
+                                  same expectation over iteration
+
+    
+    Outputs :
+    - generation : A list of all generations generated during the process
+    - best_route : The best route  
+    
+    """
+    def __init__(self, stations_map: StationsMap, number_of_combinations: int = 50, max_dis: float = 100,
                  max_iter: int = 1000, alpa: float = 0.10, n_shuffle: int = 5, number_of_same_values: int = 1000):
         self.number_of_same_values = number_of_same_values
         self.stations_map = stations_map
