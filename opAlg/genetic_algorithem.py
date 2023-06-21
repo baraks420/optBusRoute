@@ -38,7 +38,7 @@ class Optimize:
             if last_best_exp == best_exp:
                 counter_best += 1
                 if counter_best >= self.number_of_same_values:
-                    print(best_exp)
+                    break
             else:
                 counter_best = 0
             last_best_exp = best_exp
