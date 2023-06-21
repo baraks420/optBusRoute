@@ -106,7 +106,7 @@ class Optimize:
         df = pd.DataFrame(columns=['stations', 'genome', 'expectation', 'distance'])
         n_station = len(self.stations)
         for _ in range(self.number_of_combinations):
-            genome = np.array(random.choices([True, False], weights=(90, 90), k=n_station))
+            genome = np.array(random.choices([True, False], weights=(10, 90), k=n_station))
             stations = tuple(self.stations[genome])
             expectation, distance,stations = self.cost(stations)
             new_raw = pd.DataFrame(
