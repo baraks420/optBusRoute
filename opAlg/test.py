@@ -40,16 +40,21 @@ exp = [10, 7, 5, 3, 7, 11, 10, 4, 2, 5, 9, 11, 6, 4, 9]
 mapStations = StationsMap(dis, exp)
 now = datetime.now()
 
+nb_comb = 100
+alpha = 0.3
+
+
 b = Optimize(
     mapStations,
     max_dis=30,
-    number_of_combinations=100,
-    alpa =0.3
+    number_of_combinations=nb_comb,
+    alpa = alpha
 )
 b.maximizer()
 
+print("************* nb_comb = ",nb_comb," and alpha = ",alpha,"****************")
 print("computation time is: ", datetime.now() - now)
-print("************* Best Route **********")
 print(b.best_route)
-plot_best_route(dis,exp,b.best_route["stations"][0])
-plot_iteration(b.generation)
+sum_exp = b.best_route["expectation"][0]
+plot_best_route(dis,exp,b.best_route["stations"][0],nb_comb,alpha,sum_exp)
+plot_iteration(b.generation,nb_comb,alpha)

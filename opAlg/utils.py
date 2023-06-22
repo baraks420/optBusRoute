@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 no=np.inf
 
-def plot_best_route(G,exp,best_path):
+def plot_best_route(G,exp,best_path,nb_comb,alpha,sum_exp):
     """
     Parameters:
     - G : Grpah matrix with distance between stations
@@ -13,7 +13,8 @@ def plot_best_route(G,exp,best_path):
     """
     
     # Create a new network instance
-    net = Network(notebook=True)
+    title= "routes/iter :"+str(nb_comb)+" - "+"alpha :"+str(alpha)+" - Sum of exp : "+str(sum_exp)
+    net = Network(notebook=True, heading=title)
 
     # Add nodes
     num_nodes = G.shape[0]
@@ -47,11 +48,12 @@ def plot_best_route(G,exp,best_path):
 
     # Visualize the graph network
     net.show_buttons(filter_=['physics'])
+
     net.show('graph.html')
     
 
 
-def plot_iteration(generation):
+def plot_iteration(generation,nb_comb,alpha):
     """
     input :
     - List of all generations
@@ -65,10 +67,12 @@ def plot_iteration(generation):
         mean_exp.append(generation[i]["expectation"].mean())
     
     
-    plt.plot(range(len(generation)),max_exp, color='green', label="max expectations")
-    plt.plot(range(len(generation)),min_exp, color='red', label="min expectations")
-    plt.plot(range(len(generation)),mean_exp, color='blue', label="mean expectations")
-    plt.title("Route Expectation by iteration - (n routes/iter)")
+    plt.plot(range(len(generation)),max_exp, color='green', label="Best route cost")
+    #plt.plot(range(len(generation)),min_exp, color='red', label="min expectations")
+    #plt.plot(range(len(generation)),mean_exp, color='blue', label="mean expectations")
+    plt.title("Best Route cost by iteration : "+str(nb_comb)+" routes/iter & aplha = "+str(alpha))
+    plt.xlabel("iterations")
+    plt.ylabel("best route cost")
 
     plt.legend()
     plt.show()
