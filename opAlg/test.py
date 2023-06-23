@@ -37,6 +37,7 @@ dis = np.array([
 exp = [10, 7, 5, 3, 7, 11, 10, 4, 2, 5, 9, 11, 6, 4, 9]
 
 
+
 mapStations = StationsMap(dis, exp)
 now = datetime.now()
 
@@ -49,6 +50,7 @@ b = Optimize(
     max_dis=30,
     number_of_combinations=nb_comb,
     alpa = alpha
+    
 )
 b.maximizer()
 
