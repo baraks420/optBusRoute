@@ -8,7 +8,7 @@ from create_map import StationsMap
 class Optimize:
     """
     Parameters (input): 
-        - sations_map : np.ndarray (n,n) matrix that represent the Graph, with distance between stations  
+        - stations_map : np.ndarray (n,n) matrix that represent the Graph, with distance between stations and expectations
         - number_of_combinations : (int) Number of routes generated at each iteration
         - max_dis : (int) Max distance allowed in a route
         - max_iter :(int) max iteration
@@ -24,6 +24,7 @@ class Optimize:
     - best_route : The best route  
     
     """
+
     def __init__(self, stations_map: StationsMap, number_of_combinations: int = 50, max_dis: float = 100,
                  max_iter: int = 1000, alpa: float = 0.10, n_shuffle: int = 5, number_of_same_values: int = 1000):
         self.number_of_same_values = number_of_same_values
@@ -43,6 +44,12 @@ class Optimize:
         self.accuracy = 0
 
     def maximizer(self):
+        """
+            calculating the maximizer function with 3 stopping conditions
+            1) reaching maximum number of iteration
+            2) reaching a plato (no change in the expectation)
+            3) reaching expectation threshold (0.95 of the maximum expectation possible)
+        """
         self.generation = [self.create_random_combinations()]
         self.generation[-1].sort_values("expectation", ascending=False, inplace=True)
         last_best_exp = self.generation[-1].head(1).iloc[0]["expectation"]
@@ -51,14 +58,14 @@ class Optimize:
             generation = self.generation[-1]
             generation.sort_values("expectation", ascending=False, inplace=True)
             best_exp = generation.head(1).iloc[0]["expectation"]
-            if last_best_exp == best_exp:
+            if last_best_exp == best_exp:  # breaking point reaching a plato
                 counter_best += 1
                 if counter_best >= self.number_of_same_values:
                     break
             else:
                 counter_best = 0
             last_best_exp = best_exp
-            if best_exp >= self.exp_threshold:
+            if best_exp >= self.exp_threshold:  # breaking point reaching exp threshold
                 self.accuracy = 100 * generation.head(1).iloc[0]["expectation"] / self.total_exp
                 self.best_route = generation.head(1)
                 break
@@ -73,6 +80,16 @@ class Optimize:
         self.best_route = generation.head(1)
 
     def cost(self, stations: tuple) -> (int, float):
+        """
+        calculating the cost function.
+        it will shuffle the station self.n_shuffle times or until he finds route with sufficient distance
+        Parameters (input):
+            - stations : tuple containing the route
+        Outputs :
+            - expectation : expectation of the route (-1 if no sufficient distance found)
+            - distance : the distance of the root
+            - stations : the ordered stations
+        """
         dis = 0
         stations_np = np.array(stations)
         for _ in range(self.n_shuffle):
@@ -83,6 +100,13 @@ class Optimize:
         return -1, dis, stations
 
     def create_new_generation(self, generation: pd.DataFrame):
+        """
+        randomly create new generation, using genetic algorithm principle, cross over and mutation
+        Parameters (input):
+            - generation : top route of last generation
+        Outputs :
+            - new_gen  : new generation contains the top route of last generation and the new created generations
+        """
         new_gen = generation.copy()
         while len(new_gen.index) <= self.number_of_combinations:
             cross_over = generation.sample(2)
@@ -97,6 +121,16 @@ class Optimize:
         return new_gen
 
     def mutation(self, child: pd.DataFrame, num_of_mutation: int = 1, probability: float = 0.5) -> pd.DataFrame:
+        """
+        randomly create a mutation (switching 1 bit in the code)
+        this will change one of the station in the route
+        Parameters (input):
+            - child : a {0,1} code that represent a route
+            - num_of_mutation: number of mutations
+            - probability: probability that the mutation will happen
+        Outputs :
+            - the route after the mutation
+        """
         for _ in range(num_of_mutation):
             genome = child.at[0, 'genome']
             stations = np.array(child.at[0, 'stations'])
@@ -111,6 +145,14 @@ class Optimize:
         return child
 
     def single_point_crossover(self, cross1: pd.DataFrame, cross2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+        """
+        randomly create a crossover (switching the code of two route in random place)
+        Parameters (input):
+            - cross1,cross2 : a {0,1} code that represent a route
+        Outputs :
+            - the routes after the crossover
+        """
+
         genome1 = cross1['genome']
         genome2 = cross2['genome']
 
@@ -133,6 +175,12 @@ class Optimize:
         return child1, child2
 
     def create_random_combinations(self) -> pd.DataFrame:
+        """
+        creating random route
+        we will use wight in order to create the code as we want to start with small route that will not reach the max distance
+        Outputs :
+            - df containing the routes
+        """
         df = pd.DataFrame(columns=['stations', 'genome', 'expectation', 'distance'])
         n_station = len(self.stations)
         for _ in range(self.number_of_combinations):
@@ -160,14 +208,6 @@ class Optimize:
 
 if __name__ == '__main__':
     now = datetime.now()
-    # dis = np.array([
-    #     [0, 1, np.inf, 3, 4],
-    #     [0, 0, 5, 6, 7],
-    #     [0, 0, 0, 8, 9],
-    #     [0, 0, 0, 0, 10],
-    #     [0, 0, 0, 0, 0]
-    # ])
-    # exp = [1, 2, 3, 4]
     random.seed(1)
     size = 100
     m = np.random.randint(1, 10, size=(size + 1, size + 1))
@@ -175,10 +215,8 @@ if __name__ == '__main__':
     exp = np.random.randint(1, 10, size=size)
 
     mapStations = StationsMap(dis, exp)
-    # print(mapStations.distances)
     b = Optimize(
         mapStations
     )
     b.maximizer()
     print("time is:", datetime.now() - now)
-    # print(b.generation)
